@@ -1,0 +1,879 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>세트/회수 헬스 트래커</title>
+    <link rel="manifest" href="manifest.json">
+    <style>
+        /* CSS: 스타일 */
+        body { font-family: 'Arial', sans-serif; background-color: #f4f4f9; color: #333; margin: 0; padding: 0; }
+        
+        .header { 
+            background-color: #003366; 
+            color: white; 
+            padding: 15px 20px; 
+            text-align: center; 
+        }
+        .nav { 
+            display: flex; 
+            justify-content: center; 
+            background-color: #004085; 
+        }
+        .nav-btn { 
+            background: none; 
+            border: none; 
+            padding: 10px 20px; 
+            color: white; 
+            font-size: 16px; 
+            cursor: pointer; 
+            transition: background-color 0.3s; 
+        }
+        .nav-btn:hover, .nav-btn.active { 
+            background-color: #003366; 
+        }
+        .container { max-width: 800px; margin: 20px auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); }
+        h1, h2 { color: #007bff; border-bottom: 2px solid #007bff; padding-bottom: 5px; margin-top: 0; }
+        
+        .session-item { border: 1px solid #ddd; padding: 15px; margin-bottom: 15px; border-radius: 8px; background: #f9f9f9; }
+        .session-item h4 { margin-top: 0; margin-bottom: 5px; color: #007bff; }
+        .set-row { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            padding: 5px 0; 
+            border-bottom: 1px dotted #ccc; 
+            flex-wrap: wrap;
+        }
+        .set-row:last-child { border-bottom: none; }
+        
+        .set-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .set-info input[type="number"] {
+            width: 50px;
+            padding: 5px;
+            text-align: right;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        .count-btn, .timer-btn, .setting-btn { 
+            background-color: #28a745;
+            color: white; 
+            border: none; 
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer; 
+            font-size: 14px; 
+            transition: background-color 0.3s, opacity 0.3s; 
+            margin: 2px;
+            white-space: nowrap;
+        }
+        .count-btn:hover, .timer-btn:hover, .setting-btn:hover { 
+            background-color: #218838; 
+        }
+
+        .count-btn.remove-btn { 
+            background-color: #dc3545;
+        }
+        .count-btn.remove-btn:hover { 
+            background-color: #c82333; 
+        }
+        .add-set-btn { 
+            background-color: #ffc107;
+            color: #333; 
+            margin-top: 10px; 
+            width: 100%; 
+        }
+        .add-set-btn:hover {
+            background-color: #e0a800;
+        }
+        
+        .timer-controls {
+            display: flex;
+            justify-content: space-around;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .timer-btn {
+            flex-grow: 1;
+            padding: 10px 15px;
+        }
+
+        .setting-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        .setting-group input[type="text"], .setting-group input[type="number"] {
+            flex-grow: 1;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        #timer-display { font-size: 40px; font-weight: bold; color: #dc3545; text-align: center; margin-top: 15px; }
+        #complete-btn { 
+            background-color: #007bff; 
+            color: white; 
+            border: none; 
+            padding: 15px 20px; 
+            border-radius: 8px; 
+            cursor: pointer; 
+            width: 100%; 
+            font-size: 18px; 
+            margin-top: 20px; 
+            transition: background-color 0.3s;
+        }
+        #complete-btn:hover {
+            background-color: #0056b3;
+        }
+
+        #add-session-workout-btn { 
+            background-color: #0099ff; 
+            color: white; 
+            padding: 10px 15px; 
+            border: none; 
+            border-radius: 8px; 
+            width: 100%; 
+            margin-bottom: 20px; 
+            font-size: 16px; 
+            cursor: pointer; 
+            transition: background-color 0.3s;
+        }
+        #add-session-workout-btn:hover { background-color: #0077cc; }
+        
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.4); }
+        .modal-content { background-color: #fefefe; margin: 15% auto; padding: 20px; border: 1px solid #888; width: 80%; max-width: 500px; border-radius: 10px; position: relative; }
+        .close-btn { color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer; }
+        .close-btn:hover, .close-btn:focus { color: #000; text-decoration: none; cursor: pointer; }
+        #modal-workout-list { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 15px; }
+        .modal-item { padding: 15px; border: 1px solid #ccc; border-radius: 8px; text-align: center; cursor: pointer; transition: background-color 0.2s; font-weight: bold; }
+        .modal-item:hover { background-color: #e6f7ff; }
+        .modal-item.disabled { background-color: #f0f0f0; cursor: default; color: #999; }
+
+        .calendar-view { margin-top: 30px; display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; text-align: center; }
+        .cal-day { padding: 10px 5px; border: 1px solid #ddd; border-radius: 4px; position: relative; cursor: pointer; transition: background-color 0.2s; }
+        .cal-day:hover { background-color: #f0f0f5; }
+        .sticker { position: absolute; top: -5px; right: -5px; background: #28a745; color: white; border-radius: 50%; padding: 4px; font-size: 12px; line-height: 1; }
+        .log-display { margin-top: 20px; padding: 15px; background: #f0f0f5; border-radius: 8px; }
+
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        #editable-workout-list li {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px dotted #eee;
+        }
+        #editable-workout-list li:last-child {
+            border-bottom: none;
+        }
+    </style>
+</head>
+<body>
+
+    <header class="header">
+        <h1>나만의 헬스 트래커 💪</h1>
+    </header>
+
+    <nav class="nav">
+        <button class="nav-btn active" data-tab="workout">운동/타이머</button>
+        <button class="nav-btn" data-tab="calendar">기록 달력</button>
+        <button class="nav-btn" data-tab="settings">설정</button>
+    </nav>
+
+    <div class="container">
+        
+        <div id="workout" class="tab-content active">
+            <section id="timer-section">
+                <h2>쉬는 시간 타이머</h2>
+                <div id="timer-display">00:30</div>
+                <div class="timer-controls">
+                    <button class="timer-btn" id="start-timer-btn">시작 / 재개</button>
+                    <button class="timer-btn" id="pause-timer-btn">일시정지</button>
+                    <button class="timer-btn" id="reset-timer-btn">재설정</button>
+                </div>
+            </section>
+
+            <section id="workout-section" style="margin-top: 30px;">
+                <h2>오늘의 운동 목록 (무게/세트/회수 기록)</h2>
+                
+                <button id="add-session-workout-btn">+ 운동 추가하기</button>
+
+                <div id="workout-list">
+                    </div>
+                
+                <div id="complete-status"></div>
+                <button id="complete-btn">운동 완료 및 기록하기</button>
+            </section>
+        </div>
+
+        <div id="calendar" class="tab-content">
+            <section id="calendar-section">
+                <h2>운동 기록 달력</h2>
+                <div class="calendar-view" id="calendar-view">
+                    </div>
+                <div id="selected-log" class="log-display" style="display:none;"></div>
+            </section>
+        </div>
+
+        <div id="settings" class="tab-content">
+            <section>
+                <h2>마스터 운동 목록 관리 (전체 목록)</h2>
+                <div class="setting-group">
+                    <input type="text" id="new-workout-name" placeholder="새 운동 이름 (예: 런지)">
+                    <button class="setting-btn" onclick="addNewWorkout()">마스터 목록에 추가</button>
+                </div>
+                <ul id="editable-workout-list" style="list-style: none; padding: 0;">
+                    </ul>
+                <p style="font-size: 14px; color: #6c757d; margin-top: 10px;">*이 목록은 앱에서 사용할 수 있는 전체 운동이며, 여기서 삭제 시 오늘의 목록에서도 제거됩니다.</p>
+            </section>
+
+            <section style="margin-top: 30px;">
+                <h2>쉬는 시간 설정</h2>
+                <div class="setting-group">
+                    <input type="number" id="rest-time-input" min="5" value="30" style="width: 80px;"> 초
+                    <button class="setting-btn" onclick="setRestTime()">설정 저장</button>
+                    <p style="font-size: 14px; color: #6c757d; margin-top: 10px;">(현재 설정: <span id="current-rest-time">30</span>초)</p>
+                </div>
+            </section>
+
+            <section style="margin-top: 30px;">
+                <h2>기타 설정</h2>
+                <button class="setting-btn remove-btn" id="reset-settings-btn" onclick="resetSettings" style="width: 100%; padding: 10px 15px; font-size: 16px;">
+                    설정 기본값으로 초기화
+                </button>
+            </section>
+        </div>
+
+    </div>
+
+    <div id="select-workout-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModal()">&times;</span>
+            <h3>오늘의 운동 선택</h3>
+            <p style="font-size: 14px; color:#6c757d;">(클릭하면 목록에 추가됩니다.)</p>
+            <div id="modal-workout-list">
+                </div>
+        </div>
+    </div>
+
+    <script>
+        // JavaScript: 로직 처리 및 기능 업그레이드 (생략)
+
+        // === 0. 기본 설정 상수 정의 ===
+        const DEFAULT_WORKOUTS = [
+            { name: "벤치프레스" }, 
+            { name: "스쿼트" }, 
+            { name: "바벨로우" }, 
+            { name: "오버헤드 프레스" }, 
+            { name: "데드 리프트" }
+        ];
+        const DEFAULT_REST_TIME = 120; // 2분 (120초)
+
+        // === 1. 초기 데이터 및 로컬 스토리지 관리 ===
+        
+        const getStoredWorkouts = () => {
+            try {
+                return JSON.parse(localStorage.getItem('userWorkouts')) || DEFAULT_WORKOUTS; 
+            } catch {
+                return DEFAULT_WORKOUTS;
+            }
+        };
+        const saveStoredWorkouts = (workouts) => localStorage.setItem('userWorkouts', JSON.stringify(workouts));
+        
+        const getCurrentSession = () => {
+             try {
+                const session = JSON.parse(localStorage.getItem('currentSessionWorkouts'));
+                if (Array.isArray(session)) {
+                    session.forEach(workout => {
+                        if (Array.isArray(workout.sets)) {
+                            workout.sets.forEach(set => {
+                                if (set && typeof set.weight === 'undefined') {
+                                    set.weight = 0; 
+                                }
+                            });
+                        }
+                    });
+                }
+                return Array.isArray(session) ? session : []; 
+            } catch {
+                return [];
+            }
+        };
+        const saveCurrentSession = (session) => localStorage.setItem('currentSessionWorkouts', JSON.stringify(session));
+        
+        const getRestTimeSetting = () => parseInt(localStorage.getItem('restTime') || DEFAULT_REST_TIME.toString()); 
+        const saveRestTimeSetting = (time) => localStorage.setItem('restTime', time.toString());
+
+        const getWorkoutLogs = () => {
+            try {
+                return JSON.parse(localStorage.getItem('workoutLogs')) || {};
+            } catch {
+                return {};
+            }
+        };
+        const saveWorkoutLogs = (logs) => localStorage.setItem('workoutLogs', JSON.stringify(logs));
+
+        let currentWorkouts = getCurrentSession(); 
+        let timerInterval;
+        let timeRemaining = getRestTimeSetting();
+
+        function getLastRecordedWeight(workoutName) {
+            const logs = getWorkoutLogs();
+            const sortedDates = Object.keys(logs).sort().reverse(); 
+
+            for (const dateKey of sortedDates) {
+                const log = logs[dateKey];
+                if (log && log.workouts) {
+                    const targetWorkout = log.workouts.find(w => w.name === workoutName);
+                    
+                    if (targetWorkout && targetWorkout.sets && targetWorkout.sets.length > 0) {
+                        const lastSet = targetWorkout.sets.at(-1);
+                        const weight = lastSet && typeof lastSet.weight === 'number' ? lastSet.weight : 0;
+                        return weight;
+                    }
+                }
+            }
+            return 0;
+        }
+
+        // === 2. 탭 메뉴 기능 (생략) ===
+
+        document.querySelectorAll('.nav-btn').forEach(button => {
+            button.addEventListener('click', (event) => {
+                const tabId = button.getAttribute('data-tab');
+
+                document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+                event.currentTarget.classList.add('active');
+
+                document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+                document.getElementById(tabId).classList.add('active');
+
+                if (tabId === 'workout') {
+                    loadCurrentSession();
+                    updateTimerDisplay();
+                }
+                if (tabId === 'calendar') {
+                    const now = new Date();
+                    const year = now.getFullYear();
+                    const month = now.getMonth();
+                    const todayKey = now.toISOString().split('T')[0];
+                    renderCalendar(year, month);
+                    showLog(todayKey);
+                }
+                if (tabId === 'settings') {
+                    renderEditableWorkoutList();
+                    document.getElementById('current-rest-time').textContent = getRestTimeSetting();
+                    document.getElementById('rest-time-input').value = getRestTimeSetting();
+                }
+            });
+        });
+
+        // === 3. 운동 선택 모달 기능 (생략) ===
+
+        const modal = document.getElementById('select-workout-modal');
+        const addSessionWorkoutBtn = document.getElementById('add-session-workout-btn');
+
+        addSessionWorkoutBtn.addEventListener('click', openModal);
+
+        function openModal() {
+            renderModalWorkoutList();
+            modal.style.display = 'block';
+        }
+
+        function closeModal() {
+            modal.style.display = 'none';
+        }
+
+        window.onclick = function(event) {
+            if (event.target == modal) {
+                closeModal();
+            }
+        }
+        
+        function renderModalWorkoutList() {
+            const listContainer = document.getElementById('modal-workout-list');
+            listContainer.innerHTML = '';
+            
+            const masterWorkouts = getStoredWorkouts();
+            
+            const sessionWorkoutNames = Array.isArray(currentWorkouts) 
+                ? currentWorkouts.filter(w => w && w.name).map(w => w.name)
+                : []; 
+            
+
+            if (masterWorkouts.length === 0) {
+                 listContainer.innerHTML = '<p style="color:#dc3545; grid-column: 1 / span 2;">설정 탭에서 마스터 운동 목록을 먼저 추가해주세요!</p>';
+                 return;
+            }
+
+            masterWorkouts.forEach(item => {
+                const isAdded = sessionWorkoutNames.includes(item.name); 
+                
+                const itemDiv = document.createElement('div');
+                itemDiv.className = `modal-item ${isAdded ? 'disabled' : ''}`;
+                itemDiv.textContent = item.name;
+
+                if (!isAdded) {
+                    itemDiv.onclick = () => {
+                        addWorkoutToSession(item.name);
+                        closeModal(); 
+                    };
+                } else {
+                    itemDiv.title = "이미 오늘의 목록에 있습니다.";
+                }
+                listContainer.appendChild(itemDiv);
+            });
+        }
+        
+        function addWorkoutToSession(name) {
+            const lastWeight = getLastRecordedWeight(name);
+
+            currentWorkouts.push({ 
+                name: name, 
+                sets: [{ reps: 10, weight: lastWeight }] 
+            }); 
+            renderWorkoutList();
+        }
+
+        // === 4. 오늘의 운동 목록 (무게/세트/회수 기록) 기능 (생략) ===
+
+        function loadCurrentSession() {
+            currentWorkouts = getCurrentSession(); 
+            renderWorkoutList();
+            document.getElementById('complete-status').innerHTML = '';
+        }
+
+        function renderWorkoutList() {
+            const listContainer = document.getElementById('workout-list');
+            listContainer.innerHTML = '';
+
+            if (currentWorkouts.length === 0) {
+                listContainer.innerHTML = '<p style="color:#888;">오늘의 운동 목록이 비어있습니다. 위 [+ 운동 추가하기] 버튼을 눌러주세요.</p>';
+            }
+
+            currentWorkouts.forEach((item, itemIndex) => {
+                if (!item || !Array.isArray(item.sets)) return; 
+
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'session-item';
+                
+                let setsHtml = '';
+                item.sets.forEach((set, setIndex) => {
+                    const repsValue = set && typeof set.reps === 'number' ? set.reps : 0;
+                    const weightValue = set && typeof set.weight === 'number' ? set.weight : 0;
+
+                    setsHtml += `
+                        <div class="set-row">
+                            <div class="set-info">
+                                <span>세트 ${setIndex + 1}:</span>
+                                <input type="number" 
+                                       min="0" 
+                                       value="${weightValue}" 
+                                       onchange="updateWeight(${itemIndex}, ${setIndex}, this.value)"> kg
+                                <div style="display:flex; align-items:center;">
+                                    <span>회수: <span id="reps-${itemIndex}-${setIndex}">${repsValue}</span> 회</span>
+                                </div>
+                            </div>
+                            <div class="rep-controls">
+                                <button class="count-btn" onclick="updateReps(${itemIndex}, ${setIndex}, -1)">-</button>
+                                <button class="count-btn" onclick="updateReps(${itemIndex}, ${setIndex}, 1)">+</button>
+                                <button class="count-btn remove-btn" onclick="removeSet(${itemIndex}, ${setIndex})">세트 제거</button>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                itemDiv.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <h4>${item.name} (${item.sets.length} 세트)</h4>
+                        <button class="count-btn remove-btn" onclick="removeWorkoutFromSession(${itemIndex})">운동 제거</button>
+                    </div>
+                    <div class="sets-container">
+                        ${setsHtml}
+                    </div>
+                    <button class="count-btn add-set-btn" onclick="addSet(${itemIndex})">세트 추가</button>
+                `;
+                listContainer.appendChild(itemDiv);
+            });
+            saveCurrentSession(currentWorkouts);
+        }
+
+        function updateWeight(itemIndex, setIndex, newWeight) {
+            const parsedWeight = parseFloat(newWeight) || 0;
+            
+            if (currentWorkouts[itemIndex] && currentWorkouts[itemIndex].sets[setIndex]) {
+                currentWorkouts[itemIndex].sets[setIndex].weight = Math.max(0, parsedWeight);
+                saveCurrentSession(currentWorkouts);
+            }
+        }
+
+        function updateReps(itemIndex, setIndex, delta) {
+            if (!currentWorkouts[itemIndex] || !currentWorkouts[itemIndex].sets[setIndex]) return;
+
+            let currentReps = currentWorkouts[itemIndex].sets[setIndex].reps;
+            currentReps = Math.max(0, currentReps + delta);
+            currentWorkouts[itemIndex].sets[setIndex].reps = currentReps;
+            
+            const repElement = document.getElementById(`reps-${itemIndex}-${setIndex}`);
+            if (repElement) {
+                repElement.textContent = currentReps;
+            }
+            saveCurrentSession(currentWorkouts);
+        }
+
+        function addSet(itemIndex) {
+            if (!currentWorkouts[itemIndex]) return;
+            
+            const lastWeight = currentWorkouts[itemIndex].sets.length > 0 ? 
+                               (currentWorkouts[itemIndex].sets.at(-1).weight || 0) : 0;
+
+            currentWorkouts[itemIndex].sets.push({ reps: 10, weight: lastWeight });
+            renderWorkoutList();
+        }
+
+        function removeSet(itemIndex, setIndex) {
+            if (!currentWorkouts[itemIndex] || !currentWorkouts[itemIndex].sets[setIndex]) return;
+
+            if (confirm(`세트 ${setIndex + 1}을(를) 제거하시겠습니까?`)) {
+                 currentWorkouts[itemIndex].sets.splice(setIndex, 1);
+                 renderWorkoutList();
+            }
+        }
+        
+        function removeWorkoutFromSession(itemIndex) {
+            if (!currentWorkouts[itemIndex]) return;
+
+            if (confirm(`오늘의 운동 목록에서 '${currentWorkouts[itemIndex].name}'을(를) 제거하시겠습니까?`)) {
+                currentWorkouts.splice(itemIndex, 1);
+                renderWorkoutList();
+            }
+        }
+
+        // 5. 운동 완료 및 기록 함수 (생략)
+        document.getElementById('complete-btn').addEventListener('click', () => {
+            const todayKey = new Date().toISOString().split('T')[0];
+            const logs = getWorkoutLogs();
+            
+            let hasInvalidSet = false;
+            let invalidSetsMessage = "다음 세트의 무게나 회수를 0보다 큰 값으로 입력해주세요:\n";
+
+            currentWorkouts.forEach(w => {
+                if (w.sets && Array.isArray(w.sets)) {
+                    w.sets.forEach((s, index) => {
+                        if (s.reps <= 0 || s.weight <= 0) {
+                            hasInvalidSet = true;
+                            invalidSetsMessage += `- ${w.name}, 세트 ${index + 1}: (무게: ${s.weight}kg, 회수: ${s.reps}회)\n`;
+                        }
+                    });
+                }
+            });
+
+            if (hasInvalidSet) {
+                alert(invalidSetsMessage);
+                return;
+            }
+
+            const workoutsToLog = currentWorkouts.map(w => ({
+                name: w.name,
+                sets: w.sets
+            })).filter(w => w.sets.length > 0);
+
+            if (workoutsToLog.length === 0) {
+                 alert("유효한 기록된 세트가 있는 운동이 없습니다. 먼저 운동을 진행해주세요!");
+                 return;
+            }
+
+            if (logs[todayKey] && logs[todayKey].workouts) {
+                workoutsToLog.forEach(newWorkout => {
+                    const existingWorkout = logs[todayKey].workouts.find(
+                        w => w.name === newWorkout.name
+                    );
+                    
+                    if (existingWorkout) {
+                        existingWorkout.sets.push(...newWorkout.sets);
+                    } else {
+                        logs[todayKey].workouts.push(newWorkout);
+                    }
+                });
+
+            } else {
+                logs[todayKey] = {
+                    completed: true,
+                    workouts: workoutsToLog
+                };
+            }
+
+            saveWorkoutLogs(logs);
+
+            document.getElementById('complete-status').innerHTML = '<h2 style="color:#28a745;">🎉 오운완! 기록 완료! 🎉</h2>';
+            
+            localStorage.removeItem('currentSessionWorkouts'); 
+            currentWorkouts = []; 
+            loadCurrentSession(); 
+            
+            const now = new Date();
+            if (document.getElementById('calendar').classList.contains('active')) {
+                renderCalendar(now.getFullYear(), now.getMonth());
+                showLog(todayKey);
+            }
+        });
+
+
+        // === 6. 설정 기능 (생략) ===
+        
+        function addNewWorkout() {
+            const input = document.getElementById('new-workout-name');
+            const name = input.value.trim();
+
+            if (name) {
+                const storedWorkouts = getStoredWorkouts();
+                if (storedWorkouts.some(w => w.name === name)) {
+                    alert('이미 같은 이름의 운동이 마스터 목록에 있습니다.');
+                    return;
+                }
+                storedWorkouts.push({ name: name }); 
+                saveStoredWorkouts(storedWorkouts);
+                input.value = '';
+                renderEditableWorkoutList();
+            }
+        }
+
+        function deleteWorkout(index) {
+            const storedWorkouts = getStoredWorkouts();
+            if (index < 0 || index >= storedWorkouts.length) return;
+
+            if (confirm("마스터 목록에서 이 운동을 완전히 삭제하시겠습니까? 현재 진행 중인 세션에서도 제거됩니다.")) {
+                
+                const deletedName = storedWorkouts[index].name;
+
+                storedWorkouts.splice(index, 1);
+                saveStoredWorkouts(storedWorkouts);
+
+                currentWorkouts = currentWorkouts.filter(w => w.name !== deletedName);
+                saveCurrentSession(currentWorkouts);
+
+                renderEditableWorkoutList();
+                loadCurrentSession();
+            }
+        }
+
+        function renderEditableWorkoutList() {
+            const listContainer = document.getElementById('editable-workout-list');
+            listContainer.innerHTML = '';
+            
+            const storedWorkouts = getStoredWorkouts();
+
+            storedWorkouts.forEach((item, index) => {
+                const listItem = document.createElement('li');
+                listItem.className = 'workout-item';
+                listItem.style.paddingLeft = '0';
+                listItem.innerHTML = `
+                    <span>${item.name}</span>
+                    <button class="count-btn remove-btn" onclick="deleteWorkout(${index})">마스터 목록에서 삭제</button>
+                `;
+                listContainer.appendChild(listItem);
+            });
+        }
+
+        function setRestTime() {
+            const input = document.getElementById('rest-time-input');
+            const newTime = parseInt(input.value);
+
+            if (newTime >= 5 && newTime <= 300) {
+                saveRestTimeSetting(newTime);
+                document.getElementById('current-rest-time').textContent = newTime;
+                alert(`쉬는 시간이 ${newTime}초로 설정되었습니다.`);
+                
+                clearInterval(timerInterval);
+                timeRemaining = newTime; 
+                updateTimerDisplay();
+            } else {
+                alert("쉬는 시간은 5초에서 300초 사이로 설정해주세요.");
+            }
+        }
+
+        function resetSettings() {
+            if (confirm("모든 설정(마스터 운동 목록, 쉬는 시간)을 기본값으로 되돌리고 현재 세션 운동 목록을 초기화하시겠습니까?")) {
+                
+                saveStoredWorkouts(DEFAULT_WORKOUTS);
+                saveRestTimeSetting(DEFAULT_REST_TIME);
+                localStorage.removeItem('currentSessionWorkouts');
+                currentWorkouts = []; 
+
+                renderEditableWorkoutList();
+                document.getElementById('current-rest-time').textContent = DEFAULT_REST_TIME;
+                document.getElementById('rest-time-input').value = DEFAULT_REST_TIME;
+                
+                clearInterval(timerInterval);
+                timeRemaining = DEFAULT_REST_TIME;
+                updateTimerDisplay();
+                
+                loadCurrentSession(); 
+
+                alert("설정이 기본값으로 초기화되었습니다.");
+            }
+        }
+        
+        // === 7. 달력 렌더링 및 기록 보기/삭제 로직 (생략) ===
+
+        function renderCalendar(year, month) {
+            const calendarView = document.getElementById('calendar-view');
+            calendarView.innerHTML = `
+                <div style="grid-column: 1 / span 7; text-align: center; font-size: 20px; font-weight: bold; margin-bottom: 10px;">
+                    ${year}년 ${month + 1}월
+                </div>
+                <div class="cal-day" style="font-weight: bold;">일</div>
+                <div class="cal-day" style="font-weight: bold;">월</div>
+                <div class="cal-day" style="font-weight: bold;">화</div>
+                <div class="cal-day" style="font-weight: bold;">수</div>
+                <div class="cal-day" style="font-weight: bold;">목</div>
+                <div class="cal-day" style="font-weight: bold;">금</div>
+                <div class="cal-day" style="font-weight: bold;">토</div>
+            `;
+            
+            const logs = getWorkoutLogs();
+            const firstDay = new Date(year, month, 1).getDay();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            const todayDate = new Date().toISOString().split('T')[0];
+
+            for (let i = 0; i < firstDay; i++) {
+                calendarView.innerHTML += `<div class="cal-day" style="border:none;"></div>`;
+            }
+
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                const isToday = dateKey === todayDate;
+                const log = logs[dateKey];
+                
+                let dayClass = 'cal-day';
+                if (isToday) dayClass += ' today';
+                
+                let sticker = '';
+                if (log && log.completed) {
+                    sticker = `<span class="sticker" title="오운완!">✅</span>`;
+                }
+
+                const dayHtml = `<div class="${dayClass}" data-date="${dateKey}" onclick="showLog('${dateKey}')">${day}${sticker}</div>`;
+                calendarView.innerHTML += dayHtml;
+            }
+        }
+
+        function showLog(dateKey) {
+            const logs = getWorkoutLogs();
+            const log = logs[dateKey];
+            const logDisplay = document.getElementById('selected-log');
+            logDisplay.style.display = 'block';
+
+            if (log && log.completed) {
+                let logText = `**${dateKey} 운동 기록 (오운완!)**\n\n`;
+                
+                log.workouts.forEach(w => {
+                    logText += `[${w.name}]\n`;
+                    if (w.sets && Array.isArray(w.sets)) {
+                        w.sets.forEach((s, index) => {
+                            const repsValue = s && typeof s.reps === 'number' ? s.reps : 0;
+                            const weightValue = s && typeof s.weight === 'number' ? s.weight : 0;
+                            logText += `- 세트 ${index + 1}: ${weightValue}kg, ${repsValue}회\n`;
+                        });
+                    }
+                    logText += '\n';
+                });
+
+                logDisplay.innerHTML = `
+                    <p style="white-space: pre-wrap; margin-bottom: 15px;">${logText}</p>
+                    <button class="count-btn remove-btn" style="width: 100%;" onclick="deleteLog('${dateKey}')">이 날짜 기록 삭제</button>
+                `;
+            } else {
+                logDisplay.innerHTML = `${dateKey}: 운동 기록이 없습니다.`;
+            }
+        }
+
+        function deleteLog(dateKey) {
+            if (confirm(`${dateKey}의 운동 기록을 정말로 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.`)) {
+                const logs = getWorkoutLogs();
+                
+                if (logs[dateKey]) {
+                    delete logs[dateKey]; 
+                    saveWorkoutLogs(logs); 
+                    
+                    alert(`${dateKey}의 운동 기록이 삭제되었습니다.`);
+                    
+                    const now = new Date();
+                    renderCalendar(now.getFullYear(), now.getMonth());
+                    
+                    const logDisplay = document.getElementById('selected-log');
+                    logDisplay.innerHTML = '';
+                    logDisplay.style.display = 'none';
+                } else {
+                    alert("삭제할 기록이 없습니다.");
+                }
+            }
+        }
+
+
+        // === 8. 타이머 로직 (생략) ===
+        
+        function updateTimerDisplay() {
+            const minutes = Math.floor(timeRemaining / 60);
+            const seconds = timeRemaining % 60;
+            const display = document.getElementById('timer-display');
+            if (display) {
+                 display.textContent = `${minutes < 10 ? '0' : ''}${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+                 if (timeRemaining <= 0) {
+                     display.textContent = "시간 종료!";
+                 }
+            }
+        }
+
+        function startTimer() {
+            if (timerInterval) clearInterval(timerInterval);
+            if (timeRemaining <= 0) timeRemaining = getRestTimeSetting();
+
+            timerInterval = setInterval(() => {
+                timeRemaining--;
+                updateTimerDisplay();
+
+                if (timeRemaining <= 0) {
+                    clearInterval(timerInterval);
+                }
+            }, 1000);
+        }
+        
+        document.getElementById('start-timer-btn').addEventListener('click', startTimer);
+        document.getElementById('pause-timer-btn').addEventListener('click', () => clearInterval(timerInterval));
+        document.getElementById('reset-timer-btn').addEventListener('click', () => {
+            clearInterval(timerInterval);
+            timeRemaining = getRestTimeSetting();
+            updateTimerDisplay();
+        });
+
+
+        // === 9. 초기 실행 및 PWA 등록 코드 추가 ===
+        
+        loadCurrentSession(); 
+        updateTimerDisplay();
+
+        // ✨ PWA 서비스 워커 등록 (가장 마지막에 추가)
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                navigator.serviceWorker.register('/service-worker.js').then(function(registration) {
+                    // 등록 성공
+                    console.log('ServiceWorker registration successful with scope: ', registration.scope);
+                }, function(err) {
+                    // 등록 실패
+                    console.log('ServiceWorker registration failed: ', err);
+                });
+            });
+        }
+    </script>
+</body>
+</html>
