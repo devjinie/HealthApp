@@ -1,6 +1,8 @@
-// js/views/record.js
+// js/views/record.js (수정된 전체 코드)
 
-const initRecord = () => {
+// 📌 [수정] 전체 코드를 즉시 실행 함수(IIFE)로 감싸서 전역 변수 충돌을 방지합니다.
+(() => {
+
     // 📌 상수 정의 (storage.js에서 정의된 것을 사용)
     const EXERCISE_STORAGE_KEY = typeof window.EXERCISE_STORAGE_KEY !== 'undefined' ? window.EXERCISE_STORAGE_KEY : 'myhealth_exercises';
     const RECORD_STORAGE_KEY = typeof window.RECORD_STORAGE_KEY !== 'undefined' ? window.RECORD_STORAGE_KEY : 'myhealth_records';
@@ -68,8 +70,9 @@ const initRecord = () => {
             input.addEventListener('input', (e) => {
                 const recordIndex = parseInt(e.target.dataset.recordIndex);
                 const setIndex = parseInt(e.target.dataset.setIndex);
-                // 입력 값이 비어있을 경우 0으로 처리하거나, parseFloat으로 처리하여 소수점도 허용 (여기서는 parseInt 유지)
-                const value = e.target.value === '' ? 0 : parseInt(e.target.value); 
+                // 입력 값이 비어있을 경우 0으로 처리하거나, parseFloat으로 처리하여 소수점도 허용
+                // 사용자가 0보다 큰 값만 저장할 수 있도록 엄격하게 처리 (saveAllRecords 참조)
+                const value = e.target.value === '' ? 0 : parseFloat(e.target.value); 
 
                 if (currentSessionRecords[recordIndex] && currentSessionRecords[recordIndex].sets[setIndex]) {
                     if (e.target.classList.contains('set-weight')) {
@@ -91,7 +94,7 @@ const initRecord = () => {
         if (!container || !saveAllRecordsBtn) return;
 
         if (currentSessionRecords.length === 0) {
-            // 📌 수정된 간결한 플레이스홀더 텍스트
+            // 수정된 간결한 플레이스홀더 텍스트
             container.innerHTML = '<p class="placeholder-text" style="color: #777; text-align: center; padding: 20px; border: 1px dashed #ccc; border-radius: 4px;">현재 기록 중인 운동 종목이 없습니다.</p>'; 
             
             saveAllRecordsBtn.style.display = 'none';
@@ -151,7 +154,7 @@ const initRecord = () => {
 
 
     // ----------------------------------------------------
-    // 💾 기록 저장 함수
+    // 💾 기록 저장 함수 (0 값 엄격 검증 포함)
     // ----------------------------------------------------
     
     const saveAllRecords = () => {
@@ -196,6 +199,7 @@ const initRecord = () => {
         
         // 저장 후 세션 초기화
         currentSessionRecords = [];
+        // 5. 렌더링 및 날짜 초기화
         renderAllSessionRecords();
         setInitialDate();
     };
@@ -254,9 +258,6 @@ const initRecord = () => {
                 if (modal) modal.style.display = 'block';
                 console.log("➕ 운동 종목 추가 모달 열림");
             });
-        } else {
-             // 이 오류 메시지가 나타나면 views/record.html 파일 확인이 필요함
-             console.error("Fatal: 'open-exercise-modal-btn' 버튼 요소를 찾을 수 없어 모달 이벤트 등록에 실패했습니다.");
         }
         
         // 2. 모달 닫기 버튼 (X 버튼)
@@ -294,15 +295,19 @@ const initRecord = () => {
 
 
     // ----------------------------------------------------
-    // 메인 실행 로직 (initRecord 호출 시 실행)
+    // 🚀 뷰 초기화 함수 (IIFE 실행 시 자동 호출)
     // ----------------------------------------------------
-    setInitialDate();
-    renderAllSessionRecords();
-    setupStaticEventListeners();
-    setupDelegatedClickListeners();
-    
-    console.log("✅ Record View 기능 초기화 완료.");
-};
 
-// 📌 전역 노출
-window.initRecord = initRecord;
+    const initRecord = () => {
+        setInitialDate();
+        renderAllSessionRecords();
+        setupStaticEventListeners();
+        setupDelegatedClickListeners();
+        
+        console.log("✅ Record View 기능 초기화 완료.");
+    };
+
+    // 📌 IIFE가 실행될 때 초기화 함수를 바로 실행합니다.
+    initRecord();
+
+})(); // IIFE 종료

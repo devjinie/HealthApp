@@ -12,13 +12,10 @@ body {
     background-color: #f4f7f9;
     color: #333;
     line-height: 1.6;
-    transition: margin-left 0.3s ease; /* 사이드바 애니메이션을 위한 트랜지션 */
+    /* transition: margin-left 0.3s ease; <- 제거됨 */
 }
 
-/* 사이드바가 열렸을 때 body의 마진을 주어 콘텐츠를 오른쪽으로 밀어냅니다. */
-body.sidebar-open {
-    margin-left: 250px; 
-}
+/* body.sidebar-open { margin-left: 250px; } <- 제거됨 */
 
 a {
     text-decoration: none;
@@ -30,7 +27,7 @@ ul {
 }
 
 /* =========================================
-   2. 네비게이션 및 사이드바
+   2. 네비게이션 및 사이드바 (오버레이 모드)
    ========================================= */
 .navbar {
     background-color: #007bff;
@@ -48,9 +45,9 @@ ul {
 
 .navbar h1 {
     font-size: 1.5rem;
-    flex-grow: 1; /* 제목이 중앙에 오도록 공간 확보 */
+    flex-grow: 1; 
     text-align: center;
-    margin-right: 40px; /* 메뉴 버튼 공간 확보 */
+    margin-right: 40px; 
 }
 
 .menu-btn {
@@ -60,10 +57,10 @@ ul {
     font-size: 1.5rem;
     cursor: pointer;
     padding: 0;
-    z-index: 1001; /* 버튼이 사이드바 위에 있도록 */
+    z-index: 1001;
 }
 
-/* 사이드바 스타일 */
+/* 사이드바 스타일 (오버레이 모드) */
 .sidebar {
     height: 100%;
     width: 0;
@@ -73,11 +70,12 @@ ul {
     left: 0;
     background-color: #2c3e50;
     overflow-x: hidden;
-    padding-top: 70px; /* 네비게이션바 아래로 시작 */
+    padding-top: 70px;
     transition: width 0.3s ease;
 }
 
-.sidebar.open {
+/* body.sidebar-open일 때 사이드바 열림 */
+body.sidebar-open .sidebar {
     width: 250px;
 }
 
@@ -94,12 +92,31 @@ ul {
     background-color: #34495e;
 }
 
+/* 📌 [추가] 사이드바 오버레이 스타일 */
+#sidebar-overlay {
+    display: none; /* 기본적으로 숨김 */
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 800; /* 사이드바 아래 */
+    background-color: rgba(0, 0, 0, 0.5); 
+    cursor: pointer;
+}
+
+/* body.sidebar-open일 때 오버레이 표시 */
+body.sidebar-open #sidebar-overlay {
+    display: block;
+}
+
+
 /* =========================================
    3. 메인 콘텐츠 영역
    ========================================= */
 .content {
-    padding: 70px 20px 20px 20px; /* Navbar 높이만큼 상단 패딩 */
-    transition: margin-left 0.3s ease;
+    padding: 70px 20px 20px 20px; 
+    /* transition: margin-left 0.3s ease; <- 제거됨 */
 }
 
 /* =========================================
@@ -114,7 +131,7 @@ ul {
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
 }
 
-.card h3 {
+.card h3, .card h2 { /* h2도 카드 내부에 있을 수 있음 */
     color: #007bff;
     margin-bottom: 15px;
     border-bottom: 2px solid #f4f4f4;
@@ -182,21 +199,20 @@ select {
    5. 뷰별 스타일 (settings, record, stats)
    ========================================= */
 
-/* A. view-header (운동추가하기 버튼 스타일 포함) */
+/* A. view-header (이전 사용 후 제거된 스타일이므로, 필요시 추가) */
 .view-header {
     display: flex;
-    justify-content: space-between; /* 제목과 버튼을 양 끝으로 분리 */
+    justify-content: flex-start;
     align-items: center;
     padding: 15px 20px;
     border-bottom: 1px solid #eee;
     background-color: #fff;
-    margin: -20px -20px 20px -20px; /* 카드 경계에 맞추기 */
+    margin: -20px -20px 20px -20px;
 }
 
 /* A.1. 운동추가하기 버튼 스타일 */
-.btn-add-exercise {
-    padding: 8px 15px; 
-    font-size: 14px;
+.btn-add-exercise-inline { 
+    margin-bottom: 20px; /* 아래 기록 컨테이너와의 간격 확보 */
     font-weight: bold;
 }
 
@@ -258,7 +274,7 @@ select {
 }
 
 .set-input {
-    width: 60px; /* 입력 필드 너비 조정 */
+    width: 60px;
     padding: 5px;
     text-align: center;
     margin: 0;
@@ -283,41 +299,28 @@ select {
     align-items: center;
 }
 
-.stat-item:last-child {
-    border-bottom: none;
-}
-
-.stat-label {
-    font-weight: bold;
-}
-
-.stat-value {
-    color: #007bff;
-    font-weight: bold;
-}
-
 /* =========================================
    6. 모달 (Modal/팝업) 스타일
    ========================================= */
 
 .modal {
-    display: none; /* 기본적으로 숨김 */
+    display: none;
     position: fixed;
-    z-index: 2000; /* 사이드바보다 위에 있어야 함 */
+    z-index: 2000;
     left: 0;
     top: 0;
     width: 100%;
     height: 100%;
     overflow: auto;
-    background-color: rgba(0, 0, 0, 0.4); /* 배경 흐림 효과 */
+    background-color: rgba(0, 0, 0, 0.4);
 }
 
 .modal-content {
     background-color: #fefefe;
-    margin: 15% auto; /* 상단에서 15% 위치, 가운데 정렬 */
+    margin: 15% auto;
     padding: 20px;
     border: 1px solid #888;
-    width: 80%; /* 모달 너비 */
+    width: 80%;
     max-width: 500px;
     border-radius: 8px;
     position: relative;
@@ -338,10 +341,6 @@ select {
     cursor: pointer;
 }
 
-.modal-list {
-    margin-top: 10px;
-}
-
 .modal-list-item {
     padding: 12px;
     border-bottom: 1px solid #eee;
@@ -355,36 +354,29 @@ select {
 }
 
 /* =========================================
-   7. 미디어 쿼리 (반응형 디자인)
+   7. 미디어 쿼리 (반응형 디자인) - 오버레이 모드에 맞게 수정
    ========================================= */
 
 @media (min-width: 768px) {
-    /* 데스크탑 환경 */
+    /* 데스크탑 환경에서 메뉴 버튼 숨김 */
     .menu-btn {
-        display: none; /* 데스크탑에서는 메뉴 버튼 숨김 */
+        display: none;
     }
 
+    /* 📌 [수정] 데스크탑에서도 기본적으로 닫혀 있음 (width: 0) */
     .sidebar {
-        width: 250px; /* 데스크탑에서는 사이드바 항상 열림 */
-        transition: none;
-    }
-
-    body {
-        margin-left: 250px; /* 콘텐츠를 오른쪽으로 밀어냄 */
+        width: 0;
+        z-index: 2000;
     }
     
+    /* 📌 [추가] 데스크탑에서 body.sidebar-open일 때만 사이드바 열림 */
+    body.sidebar-open .sidebar {
+        width: 250px;
+    }
+
+    /* 네비게이션바는 왼쪽 끝에 고정 */
     .navbar {
-        left: 250px; /* 네비게이션 바도 사이드바 옆으로 이동 */
-        width: calc(100% - 250px);
-        box-shadow: none; /* 고정된 상태에서는 그림자 제거 */
-    }
-    
-    .navbar h1 {
-        text-align: left;
-        margin-right: 0;
-    }
-
-    .content {
-        padding-top: 90px;
+        left: 0;
+        width: 100%;
     }
 }

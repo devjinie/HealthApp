@@ -3,38 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>💪 내 건강 기록</title>
+    <title>My Health App</title>
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-    <nav class="navbar">
-        <button class="menu-btn" id="menu-btn">☰</button>
-        <h1>내 건강 기록</h1>
-    </nav>
 
-    <div class="sidebar" id="sidebar">
+    <div class="navbar">
+        <button class="menu-btn" aria-label="메뉴 열기">☰</button>
+        <h1>My Health App</h1>
+    </div>
+
+    <div id="sidebar" class="sidebar">
         <ul>
-            <li><a href="#/record" data-view="record">📝 운동 기록</a></li>
-            <li><a href="#/stats" data-view="stats">📈 통계</a></li>
-            <li><a href="#/settings" data-view="settings">⚙️ 설정</a></li>
+            <li><a href="#/record" onclick="window.toggleSidebar()">📝 운동 기록</a></li>
+            <li><a href="#/stats" onclick="window.toggleSidebar()">📊 통계</a></li>
+            <li><a href="#/settings" onclick="window.toggleSidebar()">⚙️ 설정</a></li>
         </ul>
     </div>
 
-    <div class="content" id="main-content">
-        <p style="text-align: center; margin-top: 50px; color: #777;">메뉴를 선택해주세요.</p>
+    <div id="sidebar-overlay"></div>
+
+    <div class="content">
+        <div id="main-content">
+            <h2>환영합니다!</h2>
+            <p>메뉴를 선택하여 운동 기록을 시작하세요.</p>
+        </div>
     </div>
-    
+
+    <script src="js/utils/storage.js"></script>
     <script src="js/utils/router.js"></script>
-    <script src="js/utils/sidebar.js"></script>
-    <script src="js/utils/storage.js"></script> <script src="js/views/settings.js"></script> 
+    <script src="js/views/settings.js"></script>
     <script src="js/views/record.js"></script>
-    <script src="js/views/stats.js"></script>
-    
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            // 초기 라우팅을 실행하여 기본 화면을 로드합니다.
-            window.handleRoute();
-        });
-    </script>
+    <script src="js/script.js"></script>
 </body>
 </html>
